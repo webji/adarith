@@ -9,10 +9,11 @@ from pygame.locals import *
 from .utils import *
 
 class SceneBase(object):
-    def __init__(self, id='default_scene', name='Default Sene', bg_color=BLACK, font_color=WHITE, bg_music=None):
+    def __init__(self, id='default_scene', name='Default Sene', bg_color=BLACK, bg_image=None, font_color=WHITE, bg_music=None):
         self.id = id
         self.name = name
         self.bg_color = bg_color
+        self.bg_image = bg_image
         self.font_color = font_color
         self.bg_music = bg_music
         self.nextScenes = {}
@@ -46,7 +47,7 @@ class SceneBase(object):
         pass
     
     def draw(self, screen):
-        screen.fill(self.bg_color)
+        # screen.fill(self.bg_color)
         size = screen.get_size()
         width = size[0]
         height = size[1]

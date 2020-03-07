@@ -10,7 +10,7 @@ class NoneSound:
 class Sound(object):
     def __init__(self, path):
         sound = NoneSound
-        if not pygame.mixer or not pygame.mixer.get_init():
+        if path == None or not pygame.mixer or not pygame.mixer.get_init():
             pass
         else:
             try:
@@ -20,3 +20,6 @@ class Sound(object):
                 raise SystemExit(str(geterror))
         self.sound = sound        
         super().__init__()
+
+    def play(self):
+        self.sound.play()

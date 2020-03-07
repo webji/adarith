@@ -20,6 +20,8 @@ try:
     from .arithmetic import ArithmeticFactory
     from .question import QuestionStatus, Question, ArithQuestion
     from .exam import Exam
+    from .sound import Sound
+    from .image import Image
 except ImportError as e:
     print(f'Failed to load module: {e}')
     sys.exit(2)
@@ -27,11 +29,11 @@ except ImportError as e:
 
 
 class TitleScene(SceneBase):
-    def __init__(self, id='title_scene', name='Title Sene', bg_color=(0,0,0), bg_music=None):
-        super().__init__(id=id, name=name, bg_color=bg_color, bg_music=bg_music)
+    def __init__(self, id='title_scene', name='Title Sene', bg_color=(0,0,0), bg_image=None, bg_music=None):
+        super().__init__(id=id, name=name, bg_color=bg_color, bg_image=bg_image, bg_music=bg_music)
 
     def draw(self, screen):
-        screen.fill(DEFAULT_BACKGROUND)
+        # screen.fill(DEFAULT_BACKGROUND)
         WIDTH, HEIGHT = screen.get_size()
         draw_text(screen, "GET READY", 50, WHITE, WIDTH / 2, HEIGHT / 2, align="center")
         draw_text(screen, "press <space> to start", 20, WHITE, WIDTH / 2, HEIGHT * 3 / 4, align="center")
@@ -79,7 +81,7 @@ class ArithExam(Exam):
 
     
     def draw(self, screen):
-        screen.fill(DEFAULT_BACKGROUND)
+        # screen.fill(DEFAULT_BACKGROUND)
         WIDTH, HEIGHT = screen.get_size()
         left_tab_x = WIDTH/10
         left_tab_y = HEIGHT*2/5
@@ -133,11 +135,11 @@ class ArithExam(Exam):
 
 
 class ArithScene(SceneBase):
-    def __init__(self, id='arith_scene', name='Arith Sene', bg_color=(0,0,0), bg_music=None):
+    def __init__(self, id='arith_scene', name='Arith Sene', bg_color=(0,0,0), bg_image=None, bg_music=None):
         self.exam = ArithExam()
         self.exam.load()
         self.question = self.exam.next()
-        super().__init__(id=id, name=name, bg_color=bg_color, bg_music=bg_music)
+        super().__init__(id=id, name=name, bg_color=bg_color, bg_image=bg_image, bg_music=bg_music)
 
     def draw(self, screen):
         self.exam.draw(screen)
@@ -148,7 +150,6 @@ class ArithScene(SceneBase):
             if self.question.status == QuestionStatus.STARTED:
                 if event.type == KEYUP and event.key in [K_0, K_1, K_2, K_3, K_4, K_5, K_6, K_7, K_8, K_9]:
                     key = event.key - 48
-                    print(f'Pressed: {key}')
                     self.question.answering(key)
             elif self.question.status == QuestionStatus.ANSWERED:
                 if event.type == KEYUP:
@@ -169,7 +170,6 @@ class ArithScene(SceneBase):
             elif self.question.status == QuestionStatus.COMPLETED:
                 if event.type == KEYUP and event.key in [K_RIGHT, K_SPACE, K_RETURN]:
                     key = event.key - 48
-                    print(f'Pressed: {key}')
                     self.question = self.exam.next()
 
         return super()._handle_scene_event(event)
@@ -194,30 +194,40 @@ class ArithScene(SceneBase):
 
 
 class MenuScene(SceneBase):
-    def __init__(self, id='menu_scene', name='Menu Sene', bg_color=(0,0,0), bg_music=None):
-        super().__init__(id=id, name=name, bg_color=bg_color, bg_music=bg_music)
+    def __init__(self, id='menu_scene', name='Menu Sene', bg_color=(0,0,0), bg_image=None, bg_music=None):
+        super().__init__(id=id, name=name, bg_color=bg_color, bg_image=bg_image, bg_music=bg_music)
 
     def draw(self, screen):
-        screen.fill(DEFAULT_BACKGROUND)
+        # screen.fill(DEFAULT_BACKGROUND)
         WIDTH, HEIGHT = screen.get_size()
         draw_text(screen, "SETTINGS", 50, WHITE, WIDTH / 2, HEIGHT / 2, align="center")
         draw_text(screen, "press <ESC> to return", 20, WHITE, WIDTH / 2, HEIGHT * 3 / 4, align="center")
 
 
 class EndScene(SceneBase):
-    def __init__(self, id='end_scene', name='End Sene', bg_color=(0,0,0), bg_music=None):
-        super().__init__(id=id, name=name, bg_color=bg_color, bg_music=bg_music)
+    def __init__(self, id='end_scene', name='End Sene', bg_color=(0,0,0), bg_image=None, bg_music=None):
+        super().__init__(id=id, name=name, bg_color=bg_color, bg_image=bg_image, bg_music=bg_music)
 
-    
+    def _handle_scene_event(self, event):
+        super()._handle_scene_event(event)
+        if event.type == KEYDOWN and event.key == K_q:
+            sys.exit(0)
+
     def draw(self, screen):
-        screen.fill(DEFAULT_BACKGROUND)
+        # screen.fill(DEFAULT_BACKGROUND)
         WIDTH, HEIGHT = screen.get_size()
         draw_text(screen, "GAME OVER", 50, WHITE, WIDTH / 2, HEIGHT / 2, align="center")
         draw_text(screen, "press <r> to restart", 20, WHITE, WIDTH / 2, HEIGHT * 3 / 4, align="center")
+        draw_text(screen, "press <q> to exit", 20, WHITE, WIDTH / 2, HEIGHT * 3 / 4 + 30, align="center")
 
 
 
 class ArithGame(GameBase):
+    def _init_res(self):
+        super()._init_res()
+        self.key_sound = Sound(os.path.join(self.sound_dir, 'pew.wav'))
+        self.bg_image = Image(os.path.join(self.image_dir, 'blackboard_1024_768.png')).image
+        
 
     def _init_scenes(self):
         happyTune = os.path.join(self.sound_dir, 'Happy Tune.ogg')

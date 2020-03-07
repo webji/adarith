@@ -12,6 +12,7 @@ try:
 
     from .scene import SceneBase
     from .utils import *
+    from .sound import Sound
 
 except ImportError as e:
     print(f'Failed to load module: {e}')
@@ -42,8 +43,10 @@ class GameBase(object):
     def _init_screen(self, screen=DEFAULT_SCREEN, caption=DEFAULT_CAPTION):
         pg.init()
         pg.mixer.init()
-        self.bg_music = ''
-        self.screen = pg.display.set_mode(screen)
+        self.bg_music = None
+        self.key_sound = Sound(path=None)
+        self.bg_image = None
+        self.screen = pg.display.set_mode(screen) #, pg.FULLSCREEN)
         pg.display.set_caption(caption)
 
     def _init_res(self):
@@ -65,14 +68,24 @@ class GameBase(object):
     def _init_scenes(self):
         pass
 
+    def _fill_backgroupd(self):
+        if (self.bg_image != None):
+            self.screen.fill(self.bg_color)
+            self.screen.blit(self.bg_image, self.bg_image.get_rect())
+        else:
+            self.background.fill(self.bg_color)
+            self.screen.blit(self.background, (0, 0))
+        
+
     def _init_background(self, bg_color=DEFAULT_BACKGROUND, fps=DEFAULT_FPS):
-        background = pg.Surface(self.screen.get_size())
-        self.background = background.convert()
-        self.background.fill(bg_color)
-        self.screen.blit(self.background, (0, 0))
-        pg.display.flip()
+        self.bg_color = bg_color
         self.clock = pg.time.Clock()
         self.fps = fps
+        background = pg.Surface(self.screen.get_size())
+        self.background = background.convert()
+        self._fill_backgroupd()
+        pg.display.flip()
+        
 
 
     def _post_init(self, **kwargs):
@@ -103,6 +116,8 @@ class GameBase(object):
             self.clock.tick(self.fps)
             events = []
             for event in pg.event.get():
+                if event.type == KEYDOWN:
+                    self.key_sound.play()
                 if event.type == QUIT:
                     self.scene.end()
                     self._pre_quit(kwargs=kwargs)
@@ -110,6 +125,11 @@ class GameBase(object):
                 else:
                     events.append(event)
 
+            if self.scene.next.bg_image != None and self.bg_image != self.scene.next.bg_image:
+                self.bg_image = self.scene.next.bg_image
+            
+            self._fill_backgroupd()
+                
             self.scene.process_input(events)
             self.scene.update()
             self.scene.draw(self.screen)
@@ -119,7 +139,7 @@ class GameBase(object):
             if self.scene.next.bg_music != None and self.scene.bg_music != self.scene.next.bg_music :
                 pg.mixer.music.stop()
                 pg.mixer.music.load(self.scene.next.bg_music)
-                pg.mixer.music.play()
+                pg.mixer.music.play(loops = -1)
 
             self.scene = self.scene.next
             

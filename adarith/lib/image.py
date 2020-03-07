@@ -23,4 +23,5 @@ class Image(object):
         self.image = image
         self.rect = image.get_rect()
         super().__init__()
+        
 
