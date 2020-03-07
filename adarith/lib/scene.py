@@ -62,8 +62,7 @@ class SceneBase(object):
         self.next = next_scene
         self._pre_leave()       
         next_scene._pre_enter() 
-        print(f'switch from {self.id} to {next_scene.id}')
-
+        
 
     def end(self):
         self._pre_end()

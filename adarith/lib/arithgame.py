@@ -13,6 +13,8 @@ try:
     from socket import *
     from pygame.locals import *
 
+    import pyttsx3 as pt
+
     from .scene import SceneBase
     from .game import GameBase
     from .utils import *
@@ -22,6 +24,7 @@ try:
     from .exam import Exam
     from .sound import Sound
     from .image import Image
+
 except ImportError as e:
     print(f'Failed to load module: {e}')
     sys.exit(2)
@@ -30,7 +33,15 @@ except ImportError as e:
 
 class TitleScene(SceneBase):
     def __init__(self, id='title_scene', name='Title Sene', bg_color=(0,0,0), bg_image=None, bg_music=None):
+        self.tts_engine = None
         super().__init__(id=id, name=name, bg_color=bg_color, bg_image=bg_image, bg_music=bg_music)
+
+    
+    def _pre_enter(self, **kwarg):
+        super()._pre_enter(**kwarg)
+        self.tts_engine.say("Hello, Ada. Welcome to Your Arithmeic World!")
+        self.tts_engine.runAndWait()
+
 
     def draw(self, screen):
         # screen.fill(DEFAULT_BACKGROUND)
@@ -46,6 +57,7 @@ class ArithExam(Exam):
     def __init__(self):
         self.operation = OperationType()
         self.arithmeticFactory = ArithmeticFactory()
+        
         super().__init__()
 
     def add(self, question):
@@ -132,6 +144,8 @@ class ArithExam(Exam):
 
         draw_text(screen, "press <q> to end", 20, WHITE, question_tab_x, HEIGHT * 3 / 4, align="center")
     
+        
+
 
 
 class ArithScene(SceneBase):
@@ -139,10 +153,23 @@ class ArithScene(SceneBase):
         self.exam = ArithExam()
         self.exam.load()
         self.question = self.exam.next()
+        self.tts_engine = None
+        self.right_image = None
+        self.wrong_image = None
         super().__init__(id=id, name=name, bg_color=bg_color, bg_image=bg_image, bg_music=bg_music)
 
     def draw(self, screen):
         self.exam.draw(screen)
+
+        if self.question.status == QuestionStatus.GRADED and self.question.result != None:
+            if self.question.result == True:
+                img_rect = self.right_image.get_rect()
+                img_rect.center = (800, 450)
+                screen.blit(self.right_image, img_rect)
+            else:
+                img_rect = self.wrong_image.get_rect()
+                img_rect.center = (800, 450)
+                screen.blit(self.wrong_image, img_rect)
         
 
     def _handle_scene_event(self, event):
@@ -155,6 +182,11 @@ class ArithScene(SceneBase):
                 if event.type == KEYUP:
                     if event.key == K_RETURN:
                         self.question.submit()
+                        if self.question.result == True:
+                            self.tts_engine.say("Well done!")
+                        else:
+                            self.tts_engine.say("Sorry!")
+                        self.tts_engine.runAndWait()
                     elif event.key in [K_0, K_1, K_2, K_3, K_4, K_5, K_6, K_7, K_8, K_9]:
                         key = event.key - 48
                         value = self.question.answer*10 + key
@@ -206,11 +238,15 @@ class MenuScene(SceneBase):
 
 class EndScene(SceneBase):
     def __init__(self, id='end_scene', name='End Sene', bg_color=(0,0,0), bg_image=None, bg_music=None):
+        self.tts_engine = None
         super().__init__(id=id, name=name, bg_color=bg_color, bg_image=bg_image, bg_music=bg_music)
 
     def _handle_scene_event(self, event):
         super()._handle_scene_event(event)
         if event.type == KEYDOWN and event.key == K_q:
+            self.tts_engine.say("Goodbye Ada, my honor to see next time")
+            self.tts_engine.runAndWait()
+            self.end()
             sys.exit(0)
 
     def draw(self, screen):
@@ -227,15 +263,27 @@ class ArithGame(GameBase):
         super()._init_res()
         self.key_sound = Sound(os.path.join(self.sound_dir, 'pew.wav'))
         self.bg_image = Image(os.path.join(self.image_dir, 'blackboard_1024_768.png')).image
-        
+        self.right_image = Image(os.path.join(self.image_dir, 'right_140_147.png')).image
+        self.wrong_image = Image(os.path.join(self.image_dir, 'wrong_140_177.png')).image
+        self.engine = pt.init()
+        self.engine.setProperty('rate', 120)
+        self.engine.setProperty('volume', 0.99)
 
     def _init_scenes(self):
         happyTune = os.path.join(self.sound_dir, 'Happy Tune.ogg')
         titleScene = TitleScene(bg_music=happyTune)
+        titleScene.tts_engine = self.engine
+
         arithScene = ArithScene(bg_music=happyTune)
+        arithScene.tts_engine = self.engine
+        arithScene.right_image = self.right_image
+        arithScene.wrong_image = self.wrong_image
+
         menuScene = MenuScene(bg_music=happyTune)
+
         yippee = os.path.join(self.sound_dir, 'Yippee.ogg')
         endScene = EndScene(bg_music=yippee)
+        endScene.tts_engine = self.engine
 
         titleScene.add_next(K_ESCAPE, endScene).add_next(K_m, menuScene).add_next(K_SPACE, arithScene)
         menuScene.add_next(K_ESCAPE, titleScene)

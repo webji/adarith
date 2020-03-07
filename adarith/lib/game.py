@@ -46,7 +46,7 @@ class GameBase(object):
         self.bg_music = None
         self.key_sound = Sound(path=None)
         self.bg_image = None
-        self.screen = pg.display.set_mode(screen) #, pg.FULLSCREEN)
+        self.screen = pg.display.set_mode(screen, pg.FULLSCREEN)
         pg.display.set_caption(caption)
 
     def _init_res(self):
