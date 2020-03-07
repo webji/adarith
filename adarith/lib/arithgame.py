@@ -27,8 +27,8 @@ except ImportError as e:
 
 
 class TitleScene(SceneBase):
-    def __init__(self, id='title_scene', name='Title Sene', bg_color=(0,0,0)):
-        super().__init__(id=id, name=name, bg_color=bg_color)
+    def __init__(self, id='title_scene', name='Title Sene', bg_color=(0,0,0), bg_music=None):
+        super().__init__(id=id, name=name, bg_color=bg_color, bg_music=bg_music)
 
     def draw(self, screen):
         screen.fill(DEFAULT_BACKGROUND)
@@ -112,32 +112,32 @@ class ArithExam(Exam):
         draw_text(screen, question_status, 20, GREEN, left_tab_x, left_tab_y, align='center')    
 
         question_tab_x = WIDTH//2
-        question_tab_y = HEIGHT/5
+        question_tab_y = HEIGHT/6
 
         draw_text(screen, f'Please Input the Result', 50, WHITE, question_tab_x , question_tab_y, align='center')
         question_tab_y += 60
         
         question_number = f'Question  : {self.question.number}'
         draw_text(screen, question_number, 30, WHITE, question_tab_x , question_tab_y, align='center')
-        question_tab_y += 80
+        question_tab_y += 100
 
-        draw_text(screen, f'{self.question}', 80, WHITE, question_tab_x, question_tab_y, align="center")
-        question_tab_y += 90
+        draw_text(screen, f'{self.question}', 150, WHITE, question_tab_x, question_tab_y, align="center")
+        question_tab_y += 180
 
         question_color = WHITE if self.question.result == None else RED if self.question.result == False else GREEN  
-        draw_text(screen, f'{self.question.answer}', 50, question_color, question_tab_x, question_tab_y, align="center")
-        question_tab_y += 60
+        draw_text(screen, f'{self.question.answer}', 200, question_color, question_tab_x, question_tab_y, align="center")
+        question_tab_y += 210
 
         draw_text(screen, "press <q> to end", 20, WHITE, question_tab_x, HEIGHT * 3 / 4, align="center")
     
 
 
 class ArithScene(SceneBase):
-    def __init__(self, id='arith_scene', name='Arith Sene', bg_color=(0,0,0)):
+    def __init__(self, id='arith_scene', name='Arith Sene', bg_color=(0,0,0), bg_music=None):
         self.exam = ArithExam()
         self.exam.load()
         self.question = self.exam.next()
-        super().__init__(id=id, name=name, bg_color=bg_color)
+        super().__init__(id=id, name=name, bg_color=bg_color, bg_music=bg_music)
 
     def draw(self, screen):
         self.exam.draw(screen)
@@ -194,8 +194,8 @@ class ArithScene(SceneBase):
 
 
 class MenuScene(SceneBase):
-    def __init__(self, id='menu_scene', name='Menu Sene', bg_color=(0,0,0)):
-        super().__init__(id=id, name=name, bg_color=bg_color)
+    def __init__(self, id='menu_scene', name='Menu Sene', bg_color=(0,0,0), bg_music=None):
+        super().__init__(id=id, name=name, bg_color=bg_color, bg_music=bg_music)
 
     def draw(self, screen):
         screen.fill(DEFAULT_BACKGROUND)
@@ -205,8 +205,8 @@ class MenuScene(SceneBase):
 
 
 class EndScene(SceneBase):
-    def __init__(self, id='end_scene', name='End Sene', bg_color=(0,0,0)):
-        super().__init__(id=id, name=name, bg_color=bg_color)
+    def __init__(self, id='end_scene', name='End Sene', bg_color=(0,0,0), bg_music=None):
+        super().__init__(id=id, name=name, bg_color=bg_color, bg_music=bg_music)
 
     
     def draw(self, screen):
@@ -218,12 +218,14 @@ class EndScene(SceneBase):
 
 
 class ArithGame(GameBase):
-    
+
     def _init_scenes(self):
-        titleScene = TitleScene()
-        arithScene = ArithScene()
-        menuScene = MenuScene()
-        endScene = EndScene()
+        happyTune = os.path.join(self.sound_dir, 'Happy Tune.ogg')
+        titleScene = TitleScene(bg_music=happyTune)
+        arithScene = ArithScene(bg_music=happyTune)
+        menuScene = MenuScene(bg_music=happyTune)
+        yippee = os.path.join(self.sound_dir, 'Yippee.ogg')
+        endScene = EndScene(bg_music=yippee)
 
         titleScene.add_next(K_ESCAPE, endScene).add_next(K_m, menuScene).add_next(K_SPACE, arithScene)
         menuScene.add_next(K_ESCAPE, titleScene)
@@ -233,3 +235,11 @@ class ArithGame(GameBase):
         self.scene = titleScene
         
         return super()._init_scenes()
+
+    def _pre_run(self, **kwargs):
+        super()._pre_run(**kwargs)
+        self.scene.switch_to(self.scene)
+
+
+
+    

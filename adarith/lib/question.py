@@ -16,7 +16,7 @@ class Question(object):
         self.title = title
         self.stem = None
         self.status = QuestionStatus.INITED
-        self.answer = None
+        self.answer = 0
         self.result = False
         super().__init__()
 
@@ -45,9 +45,10 @@ class Question(object):
     
 class ArithQuestion(Question):
     def __init__(self, id, number, arithmetic):
-        self.arithmetic = arithmetic
-        self.answer = None
         super().__init__(id=id, number=number, title=f'{arithmetic}')
+        self.arithmetic = arithmetic
+        self.answer = 0
+        
 
     def grade(self):
         super().grade()

@@ -21,7 +21,7 @@ class TwoDigitArithmetic(object):
         answer = 0
         if self.operation.type == OperationType.ADD:
             answer = left + right
-        elif self.operation.type == OperationType.DIV:
+        elif self.operation.type == OperationType.SUB:
             answer = left - right
         elif self.operation.type == OperationType.MUL:
             answer = left * right

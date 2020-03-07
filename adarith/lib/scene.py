@@ -9,11 +9,12 @@ from pygame.locals import *
 from .utils import *
 
 class SceneBase(object):
-    def __init__(self, id='default_scene', name='Default Sene', bg_color=BLACK, font_color=WHITE):
+    def __init__(self, id='default_scene', name='Default Sene', bg_color=BLACK, font_color=WHITE, bg_music=None):
         self.id = id
         self.name = name
         self.bg_color = bg_color
         self.font_color = font_color
+        self.bg_music = bg_music
         self.nextScenes = {}
         self.prev = self
         self.next = self
@@ -27,6 +28,9 @@ class SceneBase(object):
     def _pre_enter(self, **kwarg):
         pass
 
+    def _pre_leave(self, **kwargs):
+        pass
+
     def _pre_end(self):
         pass
 
@@ -36,6 +40,7 @@ class SceneBase(object):
    
     def leave(self, **kwargs):
         pass
+            
 
     def update(self):
         pass
@@ -53,7 +58,9 @@ class SceneBase(object):
     def switch_to(self, next_scene):
         next_scene.prev = self
         next_scene.next = next_scene
-        self.next = next_scene        
+        self.next = next_scene
+        self._pre_leave()       
+        next_scene._pre_enter() 
         print(f'switch from {self.id} to {next_scene.id}')
 
 
