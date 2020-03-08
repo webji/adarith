@@ -1,21 +1,3 @@
-#!/usr/bin.env python
-"""
-Ada's world
-"""
-import os
-# from lib.ballgame import BallGame
-
-from lib.arithgame import ArithGame
-
-def main():
-    main_dir = os.path.split(os.path.abspath(__file__))[0]
-    # game = BallGame(path=main_dir)
-    game = ArithGame(path=main_dir)
-    game.run()
-    
-
-
-
 import sqlalchemy as sa
 from sqlalchemy.orm import sessionmaker
 
@@ -31,11 +13,10 @@ def test_db():
     db_session = sessionmaker(bind=db_engine)
     db_session = db_session()
     
-    User.init_user(db_session)
-    Setting.init_setting(db_session)
-    Question.init_question(db_session)
+    UserModel.init_user(db_session)
+    SettingModel.init_setting(db_session)
+    QuestionModel.init_question(db_session)
 
 if __name__ == '__main__':
-    main()
-    # test_db()
-
+    test_db()
+    

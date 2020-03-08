@@ -12,17 +12,24 @@ try:
     import pygame
     from socket import *
     from pygame.locals import *
+    import sqlalchemy as sa
+    from sqlalchemy.orm import sessionmaker
 
-    from .scene import SceneBase
-    from .game import GameBase
-    from .utils import *
-    from .operation import OperationType
-    from .arithmetic import ArithmeticFactory
-    from .question import QuestionStatus, Question, ArithQuestion
-    from .exam import Exam
-    from .sound import Sound
-    from .image import Image
-    from .voicer import Voicer
+    from .lib.scene import SceneBase
+    from .lib.game import GameBase
+    from .lib.utils import *
+    from .lib.operation import OperationType
+    from .lib.arithmetic import ArithmeticFactory
+    from .lib.question import QuestionStatus, Question, ArithQuestion
+    from .lib.exam import Exam
+    from .lib.sound import Sound
+    from .lib.image import Image
+    from .lib.voicer import Voicer
+
+    from .model import Base
+    from .model.user_model import UserModel
+    from .model.setting_model import SettingModel
+    from .model.question_model import QuestionModel
 
 except ImportError as e:
     print(f'Failed to load module: {e}')
@@ -142,8 +149,6 @@ class ArithExam(Exam):
     
         
 
-
-
 class ArithScene(SceneBase):
     def __init__(self, id='arith_scene', name='Arith Sene', bg_color=(0,0,0), bg_image=None, bg_music=None):
         self.exam = ArithExam()
@@ -227,6 +232,7 @@ class MenuScene(SceneBase):
         self.voider = None
         super().__init__(id=id, name=name, bg_color=bg_color, bg_image=bg_image, bg_music=bg_music)
 
+
     def draw(self, screen):
         # screen.fill(DEFAULT_BACKGROUND)
         WIDTH, HEIGHT = screen.get_size()
@@ -239,6 +245,7 @@ class EndScene(SceneBase):
         self.voicer = None
         super().__init__(id=id, name=name, bg_color=bg_color, bg_image=bg_image, bg_music=bg_music)
 
+
     def _handle_scene_event(self, event):
         super()._handle_scene_event(event)
         if event.type == KEYDOWN and event.key == K_q:
@@ -246,6 +253,7 @@ class EndScene(SceneBase):
             self.end()
             self.voicer.end()
             sys.exit(0)
+
 
     def draw(self, screen):
         # screen.fill(DEFAULT_BACKGROUND)
@@ -256,17 +264,32 @@ class EndScene(SceneBase):
 
 
 class ArithGame(GameBase):
+
+    def _init_db(self):
+        db_engine = sa.create_engine(f'sqlite:///{os.path.join(self.main_dir, "data/adarith.db?check_same_hread=False")}', echo=True)
+        Base.metadata.create_all(db_engine)
+        db_session = sessionmaker(bind=db_engine)
+        self.db_session = db_session()
+        UserModel.init_user(self.db_session)
+        SettingModel.init_setting(self.db_session)
+        QuestionModel.init_question(self.db_session)
+
+        
     def _init_res(self):
         super()._init_res()
         self.key_sound = Sound(os.path.join(self.sound_dir, 'pew.wav'))
         self.bg_image = Image(os.path.join(self.image_dir, 'blackboard_1024_768.png')).image
         self.right_image = Image(os.path.join(self.image_dir, 'right_140_147.png')).image
         self.wrong_image = Image(os.path.join(self.image_dir, 'wrong_140_177.png')).image
+
+        self._init_db()
         
         self.voicer_name = 'ada'
         self.voice_path = os.path.join(self.sound_dir, self.voicer_name)
         self.voicer = Voicer(path = self.voice_path)
+
         
+
     def _init_scenes(self):
         happyTune = os.path.join(self.sound_dir, 'Happy Tune.ogg')
         titleScene = TitleScene(bg_music=happyTune)
@@ -294,6 +317,7 @@ class ArithGame(GameBase):
         self.scene = titleScene
         
         return super()._init_scenes()
+
 
     def _pre_run(self, **kwargs):
         super()._pre_run(**kwargs)
