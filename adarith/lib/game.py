@@ -46,7 +46,7 @@ class GameBase(object):
         self.bg_music = None
         self.key_sound = Sound(path=None)
         self.bg_image = None
-        self.screen = pg.display.set_mode(screen, pg.FULLSCREEN)
+        self.screen = pg.display.set_mode(screen) #, pg.FULLSCREEN)
         pg.display.set_caption(caption)
 
     def _init_res(self):
@@ -110,6 +110,7 @@ class GameBase(object):
         self._pre_run(kwargs=kwargs)
         self.bg_music = self.scene.bg_music
         pg.mixer.music.load(self.bg_music)
+        pg.mixer.music.set_volume(0.5)
         pg.mixer.music.play(loops = -1)
 
         while self.scene:

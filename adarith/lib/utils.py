@@ -492,3 +492,7 @@ def draw_text(surf, text, size, color, x, y, align="topleft", font=pg.font.match
     text_surface = font.render(text, True, color)
     text_rect = text_surface.get_rect(**{align: (x, y)})
     surf.blit(text_surface, text_rect)
+
+
+def is_digit(n='1'):
+    return n in ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']

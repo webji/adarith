@@ -12,7 +12,7 @@ class TwoDigitArithmetic(object):
         super().__init__()
 
     def __repr__(self):
-        r = f'{self.leftNumber} {self.operation} {self.rightNumber} = '
+        r = f'{self.leftNumber} {self.operation} {self.rightNumber} = ?'
         return r
 
     def answer(self):
