@@ -50,8 +50,6 @@ class TitleScene(SceneBase):
         draw_text(screen, "press <m> for menu", 20, WHITE, WIDTH / 2, HEIGHT * 3 / 4 + 50, align="center")
 
 
-
-
 class ArithExam(Exam):
     def __init__(self):
         self.operation = OperationType()
@@ -255,7 +253,6 @@ class EndScene(SceneBase):
         draw_text(screen, "GAME OVER", 50, WHITE, WIDTH / 2, HEIGHT / 2, align="center")
         draw_text(screen, "press <r> to restart", 20, WHITE, WIDTH / 2, HEIGHT * 3 / 4, align="center")
         draw_text(screen, "press <q> to exit", 20, WHITE, WIDTH / 2, HEIGHT * 3 / 4 + 30, align="center")
-
 
 
 class ArithGame(GameBase):

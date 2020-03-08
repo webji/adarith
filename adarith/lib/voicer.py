@@ -9,45 +9,65 @@ from .sound import Sound
 from .utils import *
 
 
-def play_thread(channel, play_list, play_list_lock, delay, play_thread_stop):
-    sound = None
-    # print('Starting Thread')
-    while play_thread_stop == False:
-        if channel.get_busy() == False:
-            # print('Not Busy')
-            play_list_lock.acquire()
-            if len(play_list) > 0:
-                sound = play_list.pop()
-            else:
-                sound = None
-            play_list_lock.release()
-            if sound != None:
-                # print(f'Playing: {sound}')
-                channel.play(sound)
-            else:
-                # print('No Sound')
-                sound = None
-                # return
+
+class ThreadTask(object):
+    def __init__(self):
+        self._running = True
+        super().__init__()
+
+    def end(self):
+        print('Set _running: False - {self}')
+        self._running = False
+
+    def run(self, **kwargs):
+        pass
+
+class ChannelTask(ThreadTask):
+    
+    def run(self, channel=None, play_list=None, play_list_lock=None, delay=0.5):
+        sound = None
+        while self._running:
+            print('ChannelTask Running')
+            if channel.get_busy() == False:
+                with play_list_lock:
+                    if len(play_list) > 0:
+                        sound = play_list.pop()
+                    else:
+                        sound = None
+                
+                if sound != None:
+                    channel.play(sound)
+                
+            time.sleep(delay)
+        print('ChannelTask Return')
+        return
         
+
+class TTSTask(ThreadTask):
+    def __init__(self):
+        self.engine = None
+        super().__init__()
+
+    def end(self):
+        self.engine.endLoop()
+        return super().end()
+
+    def run(self, engine=None, tts_list=None, tts_list_lock=None, delay=0.5):
+        sentence = None
+        self.engine = engine
+        while self._running:
+            with tts_list_lock:
+                if len(tts_list) > 0:
+                    sentence = tts_list.pop()
+                else:
+                    sentence = None
+
+            if sentence != None:
+                engine.say(sentence)
+                engine.runAndWait()
+                               
         time.sleep(delay)
-        
 
-def tts_thread(engine, tts_list, tts_list_lock, tts_thread_stop):
-    sentence = None
-    while tts_thread_stop == False:
-        tts_list_lock.acquire()
-        if len(tts_list) > 0:
-            sentence = tts_list.pop()
-        else:
-            sentence = None
-        tts_list_lock.release()
-
-        if sentence != None:
-            engine.say(sentence)
-            engine.runAndWait()
-        else:
-            sentence = None
-            # return
 
 
 class Voicer(object):
@@ -64,32 +84,30 @@ class Voicer(object):
         self.channel = self._find_channel()
         self.play_list = []
         self.play_list_lock = threading.Lock()
-        self.play_thread_stop = False
-        self.play_thread = threading.Thread(None, play_thread, args=(self.channel, self.play_list, self.play_list_lock, 0.1, self.play_thread_stop))
+        self.channel_task = ChannelTask()
+        self.play_thread = threading.Thread(None, self.channel_task.run, args=(self.channel, self.play_list, self.play_list_lock), daemon=True)
+        self.play_thread.start()
         
         self.engine = pt.init()
         self.engine.setProperty('rate', 120)
         self.engine.setProperty('volume', 1)
         self.tts_list = []
         self.tts_list_lock = threading.Lock()
-        self.tts_thread_stop = False
-        self.tts_thread = threading.Thread(None, tts_thread, args=(self.engine, self.tts_list, self.tts_list_lock, self.tts_thread_stop))
+        self.tts_task = TTSTask()
+        self.tts_thread = threading.Thread(None, self.tts_task.run, args=(self.engine, self.tts_list, self.tts_list_lock), daemon=True)
+        self.tts_thread.start()
+
         super().__init__()
 
     def queue(self, sound):
-        self.play_list_lock.acquire()
-        self.play_list.insert(0, sound)
-        self.play_list_lock.release()
-        if self.play_thread.is_alive() != True:
-            self.play_thread.start()
-
+        with self.play_list_lock:
+            self.play_list.insert(0, sound)
+        
 
     def queue_tts(self, sentence):
-        self.tts_list_lock.acquire()
-        self.tts_list.insert(0, sentence)
-        self.tts_list_lock.release()
-        if self.tts_thread.is_alive() == False:
-            self.tts_thread.start()
+        with self.tts_list_lock:
+            self.tts_list.insert(0, sentence)
+            
 
     def _find_channel(self):
         n = pg.mixer.get_num_channels()
@@ -157,8 +175,9 @@ class Voicer(object):
 
     
     def end(self):
-        self.play_thread_stop = True
-        self.tts_thread_stop = True
+        print('Try to end Voicer')
+        self.channel_task.end()
+        self.tts_task.end()
         self.play_thread.join()
         self.tts_thread.join()
 
