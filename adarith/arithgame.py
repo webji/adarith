@@ -15,21 +15,21 @@ try:
     import sqlalchemy as sa
     from sqlalchemy.orm import sessionmaker
 
-    from .lib.scene import SceneBase
-    from .lib.game import GameBase
-    from .lib.utils import *
-    from .lib.operation import OperationType
-    from .lib.arithmetic import ArithmeticFactory
-    from .lib.question import QuestionStatus, Question, ArithQuestion
-    from .lib.exam import Exam
-    from .lib.sound import Sound
-    from .lib.image import Image
-    from .lib.voicer import Voicer
+    from lib.scene import SceneBase
+    from lib.game import GameBase
+    from lib.utils import *
+    from lib.operation import OperationType
+    from lib.arithmetic import ArithmeticFactory
+    from lib.question import QuestionStatus, Question, ArithQuestion
+    from lib.exam import Exam
+    from lib.sound import Sound
+    from lib.image import Image
+    from lib.voicer import Voicer
 
-    from .model import Base
-    from .model.user_model import UserModel
-    from .model.setting_model import SettingModel
-    from .model.question_model import QuestionModel
+    # from model import Base
+    # from model.user_model import UserModel
+    # from model.setting_model import SettingModel
+    # from model.question_model import QuestionModel
 
 except ImportError as e:
     print(f'Failed to load module: {e}')
@@ -282,8 +282,8 @@ class ArithGame(GameBase):
         self.right_image = Image(os.path.join(self.image_dir, 'right_140_147.png')).image
         self.wrong_image = Image(os.path.join(self.image_dir, 'wrong_140_177.png')).image
 
-        self._init_db()
-        
+        # self._init_db()
+
         self.voicer_name = 'ada'
         self.voice_path = os.path.join(self.sound_dir, self.voicer_name)
         self.voicer = Voicer(path = self.voice_path)

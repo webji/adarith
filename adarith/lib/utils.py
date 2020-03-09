@@ -8,6 +8,8 @@ import math
 import os
 import pygame as pg
 
+from .error import ArgumentException
+
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
 RED = (255, 0, 0)
@@ -496,3 +498,18 @@ def draw_text(surf, text, size, color, x, y, align="topleft", font=pg.font.match
 
 def is_digit(n='1'):
     return n in ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']
+
+
+def is_none(target=None):
+    return target == None
+
+def check_none(target=None):
+    if target == None:
+        raise ArgumentError('Should not be None')
+
+def is_none_or_empty(lists=None):
+    return lists != None and len(lists) > 0
+
+def check_none_or_empty(lists=None):
+    if is_none_or_empty(lists=lists):
+        raise ArgumentError('Should not be None or Empty')
