@@ -44,8 +44,12 @@ pip install pypiwin32
 
 ## Snapshots
 
-
-
+![Welcome Scene](./docs/get_ready.png)
+![Game Scene](./docs/arithmetic.png)
+![Correct](./docs/correct.png)
+![Wrong](./docs/wrong.png)
+![Menu Scene](./docs/setting.png)
+![End Scene](./docs/game_over.png)
 ## Features
 
 - Multi Scene Switch
