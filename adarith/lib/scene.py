@@ -6,6 +6,7 @@ Base of Scene Class
 import pygame as pg
 from pygame.locals import *
 
+# from .node import Node
 from .utils import *
 
 class Scene(object):

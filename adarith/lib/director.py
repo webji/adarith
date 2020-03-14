@@ -1,11 +1,15 @@
 
 import time
+import threading
+from enum import IntEnum
+
 
 import pygame as pg
 
 from .annotation import Singleton
 from .core import CGSize, CGColor
 
+from .application import Application
 from .scheduler import Scheduler
 from .actionmanager import ActionManager
 from .eventdispatcher import EventDispatcher
@@ -17,6 +21,15 @@ from .configure import Configure
 from .utils import *
 
 from .scene import Scene, TransitionScene
+
+
+class SetIntervalReason(IntEnum):
+    BY_GAME = 0
+    BY_ENGINE = 1
+    BY_SYSTEM = 2
+    BY_SCENE_CHANGE = 3
+    BY_DIRECTOR_PAUSE = 4
+
 
 @Singleton
 class Director():
@@ -76,6 +89,7 @@ class Director():
         self._is_status_label_updated = True
 
         self._invalid = False
+        self._thread_id = None
 
         super().__init__()
 
@@ -135,6 +149,14 @@ class Director():
         self._delta_time_passsed_by_caller = True
         self.main_loop()
 
+
+    def start_animation(self, reson:SetIntervalReason=SetIntervalReason.BY_ENGINE):
+        self._last_update = self.clock.get_ticks()
+        self._invalid = False
+        self._thread_id = threading.Thread.ident
+        Application().animation_Interval = self.animation_interval
+        self._next_delta_time_zero = True
+    
 
     def stop_animatioin(self):
         self._invalid = True
