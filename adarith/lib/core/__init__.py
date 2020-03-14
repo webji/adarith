@@ -1,6 +1,6 @@
 from enum import IntEnum
 
-from ...lib.utils import *
+from ..utils import *
 
 
 

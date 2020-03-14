@@ -503,6 +503,10 @@ def is_digit(n='1'):
 def is_none(target=None):
     return target == None
 
+def check(condition, message):
+    if not condition:
+        raise ArgumentException(message)
+
 def check_none(target=None):
     if target == None:
         raise ArgumentError('Should not be None')

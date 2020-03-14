@@ -8,7 +8,7 @@ from pygame.locals import *
 
 from .utils import *
 
-class SceneBase(object):
+class Scene(object):
     def __init__(self, id='default_scene', name='Default Sene', bg_color=BLACK, bg_image=None, font_color=WHITE, bg_music=None):
         self.id = id
         self.name = name
@@ -90,3 +90,7 @@ class SceneBase(object):
             else:
                 self._handle_scene_event(event)
 
+
+
+class TransitionScene(Scene):
+    pass

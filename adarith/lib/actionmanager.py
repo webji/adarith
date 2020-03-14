@@ -1,0 +1,2 @@
+class ActionManager(object):
+    pass

@@ -10,7 +10,7 @@ try:
     from socket import *
     from pygame.locals import *
 
-    from .scene import SceneBase
+    from .scene import Scene
     from .utils import *
     from .sound import Sound
 
@@ -21,7 +21,7 @@ except ImportError as e:
 
 class GameBase(object):
     def __init__(self, path='', screen=DEFAULT_SCREEN, bg_color=DEFAULT_BACKGROUND, caption=DEFAULT_CAPTION, fps=DEFAULT_FPS, **kwargs):
-        self.scene = SceneBase()
+        self.scene = Scene()
         self._init_path(path=path)
         self._init_screen(screen=screen, caption=caption)
         self._init_res()

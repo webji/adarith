@@ -15,7 +15,7 @@ try:
     import sqlalchemy as sa
     from sqlalchemy.orm import sessionmaker
 
-    from lib.scene import SceneBase
+    from lib.scene import Scene
     from lib.game import GameBase
     from lib.utils import *
     from lib.operation import OperationType
@@ -30,6 +30,7 @@ try:
     # from model.user_model import UserModel
     # from model.setting_model import SettingModel
     # from model.question_model import QuestionModel
+    from lib.basketball import BasketBall
 
 except ImportError as e:
     print(f'Failed to load module: {e}')
@@ -37,7 +38,7 @@ except ImportError as e:
 
 
 
-class TitleScene(SceneBase):
+class TitleScene(Scene):
     def __init__(self, id='title_scene', name='Title Sene', bg_color=(0,0,0), bg_image=None, bg_music=None):
         # self.tts_engine = None
         self.voicer = None
@@ -46,7 +47,7 @@ class TitleScene(SceneBase):
     
     def _pre_enter(self, **kwarg):
         super()._pre_enter(**kwarg)
-        self.voicer.sayTTS("Hello, Ada. Welcome to Your Arithmeic World!")
+        self.voicer.sayTTS("Hello, Ada. How are you!")
         
 
     def draw(self, screen):
@@ -101,6 +102,7 @@ class ArithExam(Exam):
         left_tab_x = WIDTH/10
         left_tab_y = HEIGHT*2/5
 
+        
         exam_number = f'Exam      : {self.number}'
         draw_text(screen, exam_number, 30, GREEN, left_tab_x, left_tab_y, align='center')
         left_tab_y += 35
@@ -149,7 +151,7 @@ class ArithExam(Exam):
     
         
 
-class ArithScene(SceneBase):
+class ArithScene(Scene):
     def __init__(self, id='arith_scene', name='Arith Sene', bg_color=(0,0,0), bg_image=None, bg_music=None):
         self.exam = ArithExam()
         self.exam.load()
@@ -158,10 +160,13 @@ class ArithScene(SceneBase):
         self.voicer = None
         self.right_image = None
         self.wrong_image = None
+        
         super().__init__(id=id, name=name, bg_color=bg_color, bg_image=bg_image, bg_music=bg_music)
 
     def draw(self, screen):
         self.exam.draw(screen)
+
+        self.basketball.draw(screen)
 
         if self.question.status == QuestionStatus.GRADED and self.question.result != None:
             if self.question.result == True:
@@ -224,10 +229,11 @@ class ArithScene(SceneBase):
             self.question.start()
             self.voicer.saySimple(f'{self.question}')
         
+        self.basketball.update()
         return super().update()
 
 
-class MenuScene(SceneBase):
+class MenuScene(Scene):
     def __init__(self, id='menu_scene', name='Menu Sene', bg_color=(0,0,0), bg_image=None, bg_music=None):
         self.voider = None
         super().__init__(id=id, name=name, bg_color=bg_color, bg_image=bg_image, bg_music=bg_music)
@@ -240,7 +246,7 @@ class MenuScene(SceneBase):
         draw_text(screen, "press <ESC> to return", 20, WHITE, WIDTH / 2, HEIGHT * 3 / 4, align="center")
 
 
-class EndScene(SceneBase):
+class EndScene(Scene):
     def __init__(self, id='end_scene', name='End Sene', bg_color=(0,0,0), bg_image=None, bg_music=None):
         self.voicer = None
         super().__init__(id=id, name=name, bg_color=bg_color, bg_image=bg_image, bg_music=bg_music)
@@ -281,7 +287,12 @@ class ArithGame(GameBase):
         self.bg_image = Image(os.path.join(self.image_dir, 'blackboard_1024_768.png')).image
         self.right_image = Image(os.path.join(self.image_dir, 'right_140_147.png')).image
         self.wrong_image = Image(os.path.join(self.image_dir, 'wrong_140_177.png')).image
-
+        ball_path = os.path.join(self.image_dir, 'basketball_50_50.png')  
+        speed = 13
+        rand = ((0.1 * (random.randint(5, 8))))
+        vector = (0.47, speed)
+        basketball = BasketBall(path=ball_path, vector=vector)
+        self.basketball = pygame.sprite.RenderPlain(basketball)
         # self._init_db()
 
         self.voicer_name = 'ada'
@@ -301,6 +312,7 @@ class ArithGame(GameBase):
         arithScene.voicer = self.voicer
         arithScene.right_image = self.right_image
         arithScene.wrong_image = self.wrong_image
+        arithScene.basketball = self.basketball
 
         menuScene = MenuScene(bg_music=happyTune)
         menuScene.voicer = self.voicer

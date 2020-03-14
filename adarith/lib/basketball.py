@@ -20,7 +20,7 @@ class BasketBall(pygame.sprite.Sprite):
         self.hit = 0
         super().__init__()
 
-    def update(self, player1, player2):
+    def update(self, player1=None, player2=None):
         newpos = self._calc_newpos(self.rect, self.vector)
         self.rect = newpos
         (angle, z) = self.vector
@@ -36,7 +36,7 @@ class BasketBall(pygame.sprite.Sprite):
                 angle = math.pi - angle
             if tr and br:
                 angle = math.pi - angle
-        else:
+        elif player1  and player2 :
             player1.rect.inflate(-3, -3)
             player2.rect.inflate(-3, -3)
 
