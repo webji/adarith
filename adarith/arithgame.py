@@ -15,9 +15,9 @@ try:
     import sqlalchemy as sa
     from sqlalchemy.orm import sessionmaker
 
-    from lib.scene import Scene
-    from lib.game import GameBase
-    from lib.utils import *
+    from oldlib.scene import Scene
+    from oldlib.game import GameBase
+    from oldlib.utils import *
     from lib.operation import OperationType
     from lib.arithmetic import ArithmeticFactory
     from lib.question import QuestionStatus, Question, ArithQuestion
