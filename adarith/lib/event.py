@@ -3,7 +3,10 @@ from enum import IntEnum
 from collections import defaultdict
 
 import pygame as pg
+from pygame.locals import *
+from sortedcontainers import SortedDict
 
+from .singleton import Singleton
 from .utils import *
 from .node import Node
 
@@ -23,14 +26,14 @@ class EventListener(object):
     EVENT_COME_TO_BACKGROUND = 'event_come_to_background'
     EVENT_RENDERER_RECREATED = 'event_renderer_recreated'
 
-    def __init__(self, listener_id:str=None, event_type:int=None, is_resistered:bool=False, is_fixed_priority:bool=False, callback=None):
+    def __init__(self, listener_id:str=None, event_type:int=None, is_resistered:bool=False, fixed_priority:int=None, callback=None):
         self.listener_id = listener_id
         self.type = event_type
         self.is_registered = is_registered
         """
         The higher the number, the higher the priority, 0 is for scene graph base priority
         """
-        self.is_fixed_priority = is_fixed_priority
+        self.fixed_priority = fixed_priority
         self.node = None
         self.paused = False
         self.enabled = True
@@ -47,25 +50,25 @@ Queue for Event Listeners
 """
 class EventListenerList(object):
     def __init__(self):
-        self.scene_graph_listeners = []
-        self.fixed_listeners = []
+        self.scene_graph_listeners = SortedDict()
+        self.fixed_listeners = SortedDict()
         self.gt0Index = 0
         super().__init__()
 
-    def size(self):
+    def get_size(self):
         return len(self.scene_graph_listeners) + len(self.fixed_listeners)
 
-    def empty(self):
+    def is_empty(self):
         return len(self.scene_graph_listeners) == 0 and len(self.fixed_listeners) == 0
 
     
-    def push_back(self, listener:EventListener=None):
-        if listener.fixed_priority == 0:
-            self.scene_graph_listeners.insert(0, listener)
+    def add(self, listener:EventListener=None):
+        if listener.fixed_priotiry == 0:
+            self.scene_graph_listeners[listener.global_z] = listener
         else:
-            self.fixed_listeners.insert(0, listener)
+            self.fixed_listeners[listener.fixed_priority] = listener
 
-    
+        
     def clear_scene_graph_listeners(self):
         self.scene_graph_listeners.clear()
 
@@ -149,8 +152,9 @@ EventDispatcher
   - node_priority_dict -- dict<node, index>
   - dirty_nodes_set -- set(node)
 """
-class EventDispatcher(object):
-    def __init__(self):
+class EventDispatcher(Singleton):
+
+    def init(self):
         self.to_added_listeners = []
         self.to_removed_listeners = []
 
@@ -164,11 +168,13 @@ class EventDispatcher(object):
         self.node_priority_index = 0
         self.dirty_nodes_set = set()
 
+        self.is_enabled = True
+
         self.internal_custom_listener_ids = []
         self.internal_custom_listener_ids.append(EventListener.EVENT_COME_TO_FOREGROUND)
         self.internal_custom_listener_ids.append(EventListener.EVENT_COME_TO_BACKGROUND)
         self.internal_custom_listener_ids.append(EventListener.EVENT_RENDERER_RECREATED)
-        super().__init__()
+        
 
     def visit_target(self, node:Node=None, is_root_node:bool=None):
         check_none(node)
@@ -373,6 +379,9 @@ class EventDispatcher(object):
                     listener.fixed_priority = fixed_priority
                     self.set_dirty(listener.listener_id, DirtyFlag.FIXED_PRIORITY)
 
+    """
+    dispatch event to listeners
+    """
     def dispatch_event_to_listeners(self, listeners:EventListenerList=None,  on_event=None):
         should_stop_propagation = False
         fixed_priority_listeners = listeners.fixed_listeners
@@ -408,6 +417,13 @@ class EventDispatcher(object):
                         break 
         
 
+    def dispatch_touch_event_to_listeners(self, listeners:EventListenerList=None, on_event=None):
+        should_stop_propagation = False
+        fixed_priority_listeners = listeners.fixed_listeners
+        scene_graph_priority_listeners = listeners.scene_graph_listeners
+
+
+
         
     def set_dirty_for_node(self, node:Node=None):
         if self.node_listeners_dict.exists(node):
@@ -424,6 +440,30 @@ class EventDispatcher(object):
         else:
             ret = flag | dirty_flag
             self.priority_dirty_flag_dict[listener_id] = ret
+
+    
+
+    def sort_event_listeners(self, listener_id:str):
+        dirtyFlag = self.priority_dirty_flag_dict[listener_id]
+        if dirtyFlag != None:
+            self.priority_dirty_flag_dict[listener_id] = DirtyFlag.NONE
+            if dirtyFlag & DirtyFlag.FIXED_PRIORITY:
+                self.sort_event_listeners_of_fixed_priority(listener_id)
+
+            if dirtyFlag & DirtyFlag.SCENE_GRAPH_PRIORITY:
+                root_node = Director().get_running_scene()
+
+        
+
+
+
+    def dispatch_event(self, event):
+        if not self.is_enabled:
+            return 
+        
+        self.update_dirty_flag_for_scene_graph()
+
+        listener_id = event.event_name()
 
 
     

@@ -91,6 +91,3 @@ class Scene(object):
                 self._handle_scene_event(event)
 
 
-
-class TransitionScene(Scene):
-    pass

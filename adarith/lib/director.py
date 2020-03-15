@@ -6,13 +6,13 @@ from enum import IntEnum
 
 import pygame as pg
 
-from .annotation import Singleton
+from .singleton import Singleton
 from .core import CGSize, CGColor
 
-from .application import Application
+# from .application import Application
 from .scheduler import Scheduler
 from .actionmanager import ActionManager
-from .eventdispatcher import EventDispatcher
+from .event import EventDispatcher
 from .render import Render
 from .node import Node
 
@@ -31,8 +31,7 @@ class SetIntervalReason(IntEnum):
     BY_DIRECTOR_PAUSE = 4
 
 
-@Singleton
-class Director():
+class Director(Singleton):
     MPF_FILTER = 0.1
 
     EVENT_BEFORE_SET_NEXT_SCENE = 'director_before_set_next_scene'
@@ -44,24 +43,34 @@ class Director():
     EVENT_RESET = 'director_reset'
     EVENT_BEFORE_DRAW = 'director_before_draw'
 
-    def __init__(self):
+    
+    def _set_default(self):
+        config = Configure()
+        self.fps = config.get_float('adarith.x.fps', Configure.DEFAULT_FPS)
+        self._old_animation_interval = self._animation_interval = 1.0/self.fps
+
+        self.application = None
         self._purge_director_in_next_loop = False
         self._restart_director_in_next_loop = False
         
-        
+        self.scheduler = Scheduler()
+        self.action_manager = ActionManager()
+        self.event_dispatcher = EventDispatcher()
+        self.render = Render()
+
+        self._scene_list = []
+
+        self.clock = pg.time.Clock()
 
         self._delta_time = 0.0
         self._delta_time_passsed_by_caller = False
-
-        self._animation_interval = 0.0
-        self._old_animation_interval = 0.0
 
         self._display_stats = False
         
         self._accum_dt = 0.0
         self._frame_rate = 0.0
 
-        self._paused = False
+        self.paused = False
 
         self._total_frames = 0
         self._frames = 0
@@ -71,8 +80,6 @@ class Director():
         self._running_scene = None
 
         self._next_scene = None
-
-        self._last_update = 0.0
 
         self._next_delta_time_zero = False
 
@@ -84,41 +91,21 @@ class Director():
 
         self._clear_colr = CGColor.clear()
 
-        self._console = None
-
         self._is_status_label_updated = True
 
-        self._invalid = False
+        self.invalid = False
         self._thread_id = None
-
-        super().__init__()
-
-
-    def _set_default(self):
-        config = Configure()
-        self.fps = config.get_value('adarith.x.fps', Configure.DEFAULT_FPS)
-        self._old_animation_interval = self._animation_interval = 1.0/fps
-
-
 
 
     def init(self, ):
         self._set_default()
-
-        self.clock = pg.time.Clock()
-
-        self._scene_list = []
-        self._last_update = self.clock.get_ticks()
-
-        self._notification_node = Node()
+        
+        self.last_update = pg.time.get_ticks()
+        self.notification_node = Node()
         
         # TODO add Console Support
-        self._console = None
-
-        self._scheduler = Scheduler()
-        self._action_manager = ActionManager()
-
-        self._event_dispatcher = EventDispatcher()
+        self.console = None
+        
         self._event_before_draw = None
         self._event_after_draw = None
         self._event_after_visit = None
@@ -127,7 +114,7 @@ class Director():
         self._event_reset_director = None
         self._before_set_next_scene = None
         self._after_set_next_scene = None
-        self._render = Render()
+        
 
 
     def main_loop(self):
@@ -139,27 +126,27 @@ class Director():
         elif self._restart_director_in_next_loop:
             self._restart_director_in_next_loop = False
             self.restart_director()
-        elif not self._invalid:
+        elif not self.invalud:
             self.draw_scene()
 
         
   
-    def main_loop(self, dt):
+    def main_loop_dt(self, dt):
         self._delta_time = dt
         self._delta_time_passsed_by_caller = True
         self.main_loop()
 
 
     def start_animation(self, reson:SetIntervalReason=SetIntervalReason.BY_ENGINE):
-        self._last_update = self.clock.get_ticks()
-        self._invalid = False
+        self._last_update = pg.time.get_ticks()
+        self.invalud = False
         self._thread_id = threading.Thread.ident
-        Application().animation_Interval = self.animation_interval
+        self.application.animation_Interval = self._animation_interval
         self._next_delta_time_zero = True
     
 
     def stop_animatioin(self):
-        self._invalid = True
+        self.invalud = True
 
     
     def get_window_size(self):
@@ -221,10 +208,10 @@ class Director():
         if self._next_delta_time_zero:
             self._delta_time = 0
             self._next_delta_time_zero = False
-            self._last_update = self.clock.get_ticks()
+            self._last_update = pg.time.get_ticks()
         else:
             if not self._delta_time_passsed_by_caller:
-                now = self.clock.get_ticks()
+                now = pg.time.get_ticks()
                 self._delta_time = now - self._last_update
                 self._last_update = now
             self._delta_time = max(0, self._delta_time)
@@ -240,7 +227,7 @@ class Director():
 
 
     def set_next_scene(self):
-        self._event_dispatcher.dispatch_event(self._before_set_next_scene)
+        self.event_dispatcher.dispatch_event(self._before_set_next_scene)
 
         running_is_transition = isinstance(self._running_scene, TransitionScene)
         new_is_transition = isinstance(self._next_scene, TransitionScene)
@@ -263,48 +250,48 @@ class Director():
             self._running_scene.on_enter()
             self._running_scene.on_enter_transition_did_finish()
 
-        self._event_dispatcher.dispatch_event(self._after_set_next_scene)
+        self.event_dispatcher.dispatch_event(self._after_set_next_scene)
 
 
 
     def draw_scene(self):
-        self._render.begin_frame()
-        self.caculate_delta_time()
+        self.render.begin_frame()
+        self.calculate_delta_time()
         events = pg.event.get()
 
-        if not self._paused:
-            self._event_dispatcher.dispatch_event(self._event_before_update)
-            self._scheduler.update(self._delta_time)
-            self._event_dispatcher.dispatch_event(self._event_after_update)
+        if not self.paused:
+            self.event_dispatcher.dispatch_event(self._event_before_update)
+            self.scheduler.update(self._delta_time)
+            self.event_dispatcher.dispatch_event(self._event_after_update)
         
-        self._render.clear()
-        self._event_dispatcher.dispatch_event(self._event_before_draw)
+        self.render.clear()
+        self.event_dispatcher.dispatch_event(self._event_before_draw)
         
         if self._next_scene:
             self.set_next_scene()
         
         if self._running_scene:
-            self._render.clear_draw_stats()
-            self._render.render_scene(self._running_scene)
-            self._event_dispatcher.dispatch_event(self._event_after_visit)
+            self.render.clear_draw_stats()
+            self.render.render_scene(self._running_scene)
+            self.event_dispatcher.dispatch_event(self._event_after_visit)
 
         if self._notification_node:
             # TODO implement visit
-            self._notification_node.visit(self._render)
+            self._notification_node.visit(self.render)
         
         self.update_frame_rate()
 
         if self._display_stats:
             self.show_status()
 
-        self._render.render()
-        self._event_dispatcher.dispatch_event(self._event_after_draw)
+        self.render.render()
+        self.event_dispatcher.dispatch_event(self._event_after_draw)
 
         self._total_frames += 1
 
         pg.display.update()
 
-        self._render.end_frame()
+        self.render.end_frame()
 
         if self._display_stats:
             self.calculate_MPF()
@@ -340,8 +327,8 @@ class Director():
             fps_str = f'{self._frames / self._accum_dt} / {self._seconds_per_frame}'
             self._fps_label.set_str(fps_str)
 
-            current_calls = self._render.get_drawn_batches()
-            current_verts = self._render.get_draw_vertices()
+            current_calls = self.render.get_drawn_batches()
+            current_verts = self.render.get_draw_vertices()
             if current_calls != self._prev_calls:
                 batch_str = f'Batch calls: {current_calls}'
                 self._draw_batches_label.set_str(batch_str)
@@ -352,7 +339,7 @@ class Director():
                 self._draw_vertices_label.set_str(vert_str)
                 self._prev_verts = current_verts
 
-            self._draw_vertices_label.visit(_render)
-            self._draw_batches_label.visit(_render)
-            self._fps_label.visit(_render)
+            self._draw_vertices_label.visit(render)
+            self._draw_batches_label.visit(render)
+            self._fps_label.visit(render)
 

@@ -3,19 +3,20 @@ import os
 
 import pygame as pg
 
-from .annotation import Singleton
-from .director import Director
+from .utils import *
+from .singleton import Singleton
 from .configure import Configure
+from .director import Director
 
-class ApplicationProtocol(object):
+class ApplicationProtocol(Singleton):
     def application_did_finish_launching(self):
-        pass
+        return True
 
     def application_did_enter_background(self):
-        pass
+        return True
 
     def application_will_enter_foreground(self):
-        pass
+        return True
 
     def set_animation_Interval(self):
         pass
@@ -30,41 +31,47 @@ class ApplicationProtocol(object):
         pass
 
 
-@Singleton
 class Application(ApplicationProtocol):
-    def __init__(self):
+
+    def init(self, main_path:str=None):
+        check_none(main_path)
+        pg.init()
+        pg.mixer.init()
+        
         self.animation_interval = 1.0/60.0*1000.0
-        self.main_path = None
-        self.res_path = None
-        self.config_path = None
+        self.main_path = main_path
+        self.res_path = os.path.join(self.main_path, 'res')
+        self.config_path = os.path.join(self.main_path, 'conf/config.yml')
         self.should_end = False
         self.clock = pg.time.Clock()
-        super().__init__()
+    
 
     def run(self):
-        if not self.application_did_finish_launching():
-            return -1
-        
-        if self.main_path == None:
-            self.main_path = os.path.join(__file__)
-        
-        self.res_path = os.path.join(self.main_path, 'res')
-        self.config_path = os.path.join(self.main_path, 'conf')
-        
         # init config
         config = Configure()
+        config.init()
         config.load(self.config_path)
 
         last_time = 0
         cur_time = 0
 
+        # init director
         director = Director()
-        director.load_config(self.config_path)
+        director.init()
+        director.application = self
+        
+        if not self.application_did_finish_launching():
+            print('Failed to launch application')
+            return -1
         
         while not self.should_end:
             last_time = pg.time.get_ticks()
             director.main_loop()
             cur_time = pg.time.get_ticks()
+
+        director.end()
+        director.main_loop()
+        director = None
 
     
     def end(self):
